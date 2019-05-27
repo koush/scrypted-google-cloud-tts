@@ -1,4 +1,7 @@
 {
+   "name": "@scrypted/gpogle-cloud-tts",
+   "version": "0.0.1",
+   "description": "Google Cloud Text to Speech plugin for Scrypted",
    "scripts": {
       "prepublishOnly": "NODE_ENV=production scrypted-webpack",
       "prescrypted-vscode-launch": "scrypted-webpack",
@@ -13,17 +16,18 @@
       "plugin"
    ],
    "scrypted": {
-      "name": "JavaScript Light",
+      "name": "Google Cloud Text to Speech",
       "type": "Device",
+      "singleInstance": true,
       "interfaces": [
-         "OnOff"
+         "BufferConverter"
       ],
       "events": [
-         "OnOff"
+         "BufferConverter"
       ]
    },
    "devDependencies": {
-      "@scrypted/sdk": "0.0.10"
+      "@scrypted/sdk": "0.0.18"
    },
    "dependencies": {
       "axios": "^0.18.0"
