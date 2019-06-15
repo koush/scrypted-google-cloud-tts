@@ -1,7 +1,7 @@
 // https://developer.scrypted.app/#getting-started
 import axios from 'axios';
-import sdk from "@scrypted/sdk";
-const { log, ScryptedDeviceBase } = sdk;
+import sdk, { BufferConverter, ScryptedDeviceBase } from "@scrypted/sdk";
+const { log } = sdk;
 
 const api_key = localStorage.getItem('api_key');
 
@@ -45,10 +45,11 @@ if (needsSetup) {
   });
 }
 
-class Device extends ScryptedDeviceBase {
+class Device extends ScryptedDeviceBase implements BufferConverter {
     constructor() {
-        this.fromMimeType = 'text/plain';
-        this.toMimeType = 'audio/mpeg';
+      super();
+      this.fromMimeType = 'text/plain';
+      this.toMimeType = 'audio/mpeg';
     }
     async convert(from, fromMimeType) {
       from = new Buffer(from);

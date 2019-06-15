@@ -27,7 +27,7 @@
       ]
    },
    "devDependencies": {
-      "@scrypted/sdk": "0.0.26"
+      "@scrypted/sdk": "0.0.27"
    },
    "dependencies": {
       "axios": "^0.18.0"
