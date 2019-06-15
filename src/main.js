@@ -1,9 +1,9 @@
 // https://developer.scrypted.app/#getting-started
 import axios from 'axios';
 import sdk from "@scrypted/sdk";
-const { log, deviceManager, scriptSettings } = sdk;
+const { log, ScryptedDeviceBase } = sdk;
 
-const api_key = scriptSettings.getString('api_key');
+const api_key = localStorage.getItem('api_key');
 
 function alertAndThrow(msg) {
   log.a(msg);
@@ -17,21 +17,21 @@ log.clearAlerts();
 
 var needsSetup = false;
 
-var voice_name = scriptSettings.getString("voice_name");
+var voice_name = localStorage.getItem("voice_name");
 if (!voice_name) {
   voice_name = "en-GB-Standard-A";
   needsSetup = true;
   log.i(`Using default voice_name setting: ${voice_name}. See log for more information.`);
 }
 
-var voice_gender = scriptSettings.getString("voice_gender");
+var voice_gender = localStorage.getItem("voice_gender");
 if (!voice_gender) {
   voice_gender = "FEMALE";
   needsSetup = true;
   log.i(`Using default voice_gender setting: ${voice_gender}. See log for more information.`);
 }
 
-var voice_language_code = scriptSettings.getString("voice_language_code");
+var voice_language_code = localStorage.getItem("voice_language_code");
 if (!voice_language_code) {
   voice_language_code = "en-GB";
   needsSetup = true;
@@ -45,11 +45,10 @@ if (needsSetup) {
   });
 }
 
-class Device {
+class Device extends ScryptedDeviceBase {
     constructor() {
-        this._state = deviceManager.getDeviceState();
-        this._state.fromMimeType = 'text/plain';
-        this._state.toMimeType = 'audio/mpeg';
+        this.fromMimeType = 'text/plain';
+        this.toMimeType = 'audio/mpeg';
     }
     async convert(from, fromMimeType) {
       from = new Buffer(from);
