@@ -1,6 +1,6 @@
 // https://developer.scrypted.app/#getting-started
 import axios from 'axios';
-import sdk, { BufferConverter, ScryptedDeviceBase } from "@scrypted/sdk";
+import sdk, { BufferConverter, ScryptedDeviceBase, Settings, Setting } from "@scrypted/sdk";
 const { log } = sdk;
 
 const api_key = localStorage.getItem('api_key');
@@ -15,37 +15,34 @@ if (!api_key) {
 }
 log.clearAlerts();
 
-var needsSetup = false;
 
 var voice_name = localStorage.getItem("voice_name");
 if (!voice_name) {
   voice_name = "en-GB-Standard-A";
-  needsSetup = true;
-  log.i(`Using default voice_name setting: ${voice_name}. See log for more information.`);
+  log.i(`Using default voice_name setting: ${voice_name}. See settings for more information.`);
 }
 
 var voice_gender = localStorage.getItem("voice_gender");
 if (!voice_gender) {
   voice_gender = "FEMALE";
-  needsSetup = true;
-  log.i(`Using default voice_gender setting: ${voice_gender}. See log for more information.`);
+  log.i(`Using default voice_gender setting: ${voice_gender}. See settings for more information.`);
 }
 
 var voice_language_code = localStorage.getItem("voice_language_code");
 if (!voice_language_code) {
   voice_language_code = "en-GB";
-  needsSetup = true;
-  log.i(`Using default voice_language_code setting: ${voice_language_code}. See log for more information.`);
+  log.i(`Using default voice_language_code setting: ${voice_language_code}. See settings for more information.`);
 }
 
-if (needsSetup) {
-  axios.get(`https://texttospeech.googleapis.com/v1/voices?key=${api_key}`)
-  .then(response => {
-    log.i(JSON.stringify(response.data, null, 2));
-  });
-}
+var voices: any = {};
+axios.get(`https://texttospeech.googleapis.com/v1/voices?key=${api_key}`)
+.then(response => {
+  log.i(JSON.stringify(response.data, null, 2));
+  voices = response.data;
+});
 
-class Device extends ScryptedDeviceBase implements BufferConverter {
+
+class Device extends ScryptedDeviceBase implements BufferConverter, Settings {
     constructor() {
       super();
       this.fromMimeType = 'text/plain';
@@ -69,6 +66,33 @@ class Device extends ScryptedDeviceBase implements BufferConverter {
 
       var result = await axios.post(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${api_key}`, json);
       return Buffer.from(result.data.audioContent, 'base64');
+    }
+
+    getSettings(): Setting[] {
+      return [{
+        title: "Voice",
+        choices: voices.voices.map(voice => voice.name),
+        key: "voice",
+        value: voice_name,
+      }];
+    }
+    putSetting(key: string, value: string | number | boolean): void {
+      if (key !== 'voice') {
+        return;
+      }
+
+      var found = voices.voices.find(voice => voice.name === value);
+      if (!found) {
+        log.a('Voice not found.');
+        return;
+      }
+
+      voice_name = found.name;
+      voice_language_code = found.languageCodes[0];
+      voice_gender = found.ssmlGender;
+      localStorage.setItem('voice_name', voice_name);
+      localStorage.setItem('voice_language_code', voice_language_code);
+      localStorage.setItem('voice_gender', voice_gender);
     }
 }
 
