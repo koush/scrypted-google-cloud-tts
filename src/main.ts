@@ -49,6 +49,7 @@ class Device extends ScryptedDeviceBase implements BufferConverter, Settings {
       this.toMimeType = 'audio/mpeg';
     }
     async convert(from, fromMimeType) {
+      log.i(from.toString());
       from = new Buffer(from);
       var json = {
         "input": {
@@ -63,8 +64,10 @@ class Device extends ScryptedDeviceBase implements BufferConverter, Settings {
           "audioEncoding": "MP3"
         }
       };
+      log.i(JSON.stringify(json));
 
       var result = await axios.post(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${api_key}`, json);
+      log.i(JSON.stringify(result.data, null, 2));
       return Buffer.from(result.data.audioContent, 'base64');
     }
 
