@@ -1,6 +1,7 @@
 // https://developer.scrypted.app/#getting-started
 import axios from 'axios';
 import sdk, { BufferConverter, ScryptedDeviceBase, Settings, Setting } from "@scrypted/sdk";
+import { Buffer } from 'buffer';
 const { log } = sdk;
 
 const api_key = localStorage.getItem('api_key');
@@ -36,67 +37,68 @@ if (!voice_language_code) {
 
 var voices: any = {};
 axios.get(`https://texttospeech.googleapis.com/v1/voices?key=${api_key}`)
-.then(response => {
-  log.i(JSON.stringify(response.data, null, 2));
-  voices = response.data;
-});
+  .then(response => {
+    log.i(JSON.stringify(response.data, null, 2));
+    voices = response.data;
+  });
 
 
 class Device extends ScryptedDeviceBase implements BufferConverter, Settings {
-    constructor() {
-      super();
-      this.fromMimeType = 'text/plain';
-      this.toMimeType = 'audio/mpeg';
-    }
-    async convert(from, fromMimeType) {
-      log.i(from.toString());
-      from = new Buffer(from);
-      var json = {
-        "input": {
-          "text": from.toString()
-        },
-        "voice": {
-          "languageCode": voice_language_code,
-          "name": voice_name,
-          "ssmlGender": voice_gender
-        },
-        "audioConfig": {
-          "audioEncoding": "MP3"
-        }
-      };
-      log.i(JSON.stringify(json));
-
-      var result = await axios.post(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${api_key}`, json);
-      log.i(JSON.stringify(result.data, null, 2));
-      return Buffer.from(result.data.audioContent, 'base64');
-    }
-
-    getSettings(): Setting[] {
-      return [{
-        title: "Voice",
-        choices: voices.voices.map(voice => voice.name),
-        key: "voice",
-        value: voice_name,
-      }];
-    }
-    putSetting(key: string, value: string | number | boolean): void {
-      if (key !== 'voice') {
-        return;
+  constructor() {
+    super();
+    this.fromMimeType = 'text/plain';
+    this.toMimeType = 'audio/mpeg';
+  }
+  async convert(from, fromMimeType) {
+    log.i(from.toString());
+    from = Buffer.from(from);
+    var json = {
+      "input": {
+        "text": from.toString()
+      },
+      "voice": {
+        "languageCode": voice_language_code,
+        "name": voice_name,
+        "ssmlGender": voice_gender
+      },
+      "audioConfig": {
+        "audioEncoding": "MP3"
       }
+    };
+    log.i(JSON.stringify(json));
 
-      var found = voices.voices.find(voice => voice.name === value);
-      if (!found) {
-        log.a('Voice not found.');
-        return;
-      }
+    var result = await axios.post(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${api_key}`, json);
+    log.i(JSON.stringify(result.data, null, 2));
+    const buffer = Buffer.from(result.data.audioContent, 'base64');
+    return new Uint8Array(buffer);
+  }
 
-      voice_name = found.name;
-      voice_language_code = found.languageCodes[0];
-      voice_gender = found.ssmlGender;
-      localStorage.setItem('voice_name', voice_name);
-      localStorage.setItem('voice_language_code', voice_language_code);
-      localStorage.setItem('voice_gender', voice_gender);
+  getSettings(): Setting[] {
+    return [{
+      title: "Voice",
+      choices: voices.voices.map(voice => voice.name),
+      key: "voice",
+      value: voice_name,
+    }];
+  }
+  putSetting(key: string, value: string | number | boolean): void {
+    if (key !== 'voice') {
+      return;
     }
+
+    var found = voices.voices.find(voice => voice.name === value);
+    if (!found) {
+      log.a('Voice not found.');
+      return;
+    }
+
+    voice_name = found.name;
+    voice_language_code = found.languageCodes[0];
+    voice_gender = found.ssmlGender;
+    localStorage.setItem('voice_name', voice_name);
+    localStorage.setItem('voice_language_code', voice_language_code);
+    localStorage.setItem('voice_gender', voice_gender);
+  }
 }
 
 export default new Device();
